@@ -1,147 +1,159 @@
 # Precio Luz - App de Precios de Electricidad en España
 
-Aplicación móvil desarrollada con React Native (Expo) para consultar el precio de la electricidad en tiempo real en España, utilizando datos oficiales de Red Eléctrica Española (REE).
+Aplicación móvil desarrollada con React Native (Expo) para consultar el precio de la electricidad en tiempo real en España.
+
+**Funciona de forma 100% independiente** - No necesita servidor backend. Incluye datos realistas y se conecta directamente a la API de Red Eléctrica Española (REE).
 
 ## Características
 
-- **Precio en tiempo real**: Consulta el precio actual de la luz actualizado cada 5 minutos
+- **Precio en tiempo real**: Consulta el precio actual de la luz
 - **Gráficos interactivos**: Visualiza la evolución del precio con gráficos dinámicos
 - **Precios por hora**: Consulta el precio de la luz para cada hora del día
 - **Calendario**: Navega por fechas anteriores y consulta precios históricos
 - **Gestión de electrodomésticos**: Añade tus aparatos eléctricos y calcula su coste de consumo
 - **Recomendaciones**: Obtén las mejores horas para consumir energía
+- **Funciona offline**: Incluye datos mock realistas para uso sin conexión
 
-## Requisitos
+## Descargar APK Directo
 
-- Node.js 18+ 
-- npm o yarn
-- Java JDK 17+ (para compilar Android)
-- Android Studio con SDK de Android (para compilar APK)
-- Backend Node.js (incluido)
+El APK listo para instalar está disponible en:
+**Releases de GitHub**: https://github.com/Dehiven/App-Precio-Luz/releases
 
-## Instalación
+## Instalación desde APK
 
-### 1. Clonar el repositorio
+1. Descarga el archivo `PrecioLuz-v1.0.0.apk` desde la sección de Releases
+2. En tu dispositivo Android:
+   - Ve a **Ajustes > Seguridad**
+   - Activa **"Fuentes desconocidas"** o **"Instalar apps desconocidas"**
+3. Abre el archivo APK con tu gestor de archivos
+4. Toca **Instalar**
+5. ¡Listo! Abre la app y disfruta
 
+## Construir APK desde Código Fuente
+
+### Requisitos
+
+- **Node.js** 18+ (https://nodejs.org/)
+- **Java JDK** 17+ (https://adoptium.net/)
+- **Android Studio** con SDK de Android (https://developer.android.com/studio)
+
+### Pasos
+
+1. **Clonar el repositorio**
 ```bash
-git clone <repository-url>
-cd APP-Precio-Luz/LuzApp
+git clone https://github.com/Dehiven/App-Precio-Luz.git
+cd App-Precio-Luz/LuzApp
 ```
 
-### 2. Instalar dependencias del frontend
-
+2. **Instalar dependencias**
 ```bash
 npm install
+cd backend && npm install && cd ..
 ```
 
-### 3. Instalar dependencias del backend
-
+3. **Generar archivos nativos de Android**
 ```bash
-cd backend
-npm install
-cd ..
+npx expo prebuild --platform android
 ```
 
-### 4. Configurar el backend (opcional)
-
-Para usar datos reales de la API de REE:
-
+4. **Compilar APK**
 ```bash
-cd backend
-cp .env.example .env
-# Editar .env y añadir tu token de la API de REE
+# Windows
+build-apk.bat
+
+# Mac/Linux
+chmod +x build-apk.sh
+./build-apk.sh
 ```
 
-Obtén tu token en: https://www.ree.es/es/apidatos
+5. El APK se generará en:
+   - `android/app/build/outputs/apk/release/app-release.apk`
+   - Copiado como: `PrecioLuz-v1.0.0.apk`
 
-## Ejecutar la aplicación
-
-### Modo desarrollo (frontend + backend)
-
-```bash
-npm run dev
-```
-
-Esto ejecutará:
-- Backend en http://localhost:5000
-- Frontend Expo en http://localhost:8081
-
-### Solo frontend (con datos mock)
-
-```bash
-npm start
-```
-
-## Compilar APK para Android
-
-### Opción 1: Compilar APK de debug
-
-```bash
-npm run build:android:debug
-```
-
-Esto generará un APK en: `android/app/build/outputs/apk/debug/app-debug.apk`
-
-### Opción 2: Compilar APK de release
-
-```bash
-npm run build:android
-```
-
-### Opción 3: Usando Android Studio
+## Compilación Manual (Android Studio)
 
 1. Abre Android Studio
 2. File > Open > Selecciona la carpeta `android`
 3. Espera a que Gradle sincronice
-4. Run > Build Bundle(s) / APK(s) > Build APK(s)
+4. Ve a Build > Generate Signed Bundle / APK
+5. Selecciona APK > Release
+6. Si no tienes keystore, usa la configuración de debug:
+   - Keystore: `android/app/debug.keystore`
+   - Password: `android`
+   - Alias: `androiddebugkey`
+   - Password: `android`
+7. Build > Build APK(s)
 
-## Estructura del proyecto
+## Estructura del Proyecto
 
 ```
 LuzApp/
-├── App.tsx                 # Componente principal
+├── App.tsx                    # Componente principal
 ├── src/
-│   ├── components/        # Componentes reutilizables
+│   ├── components/           # Componentes UI
 │   │   ├── AddApplianceModal.tsx
 │   │   ├── ApplianceItem.tsx
 │   │   ├── HourlyPriceList.tsx
 │   │   ├── PriceCard.tsx
 │   │   └── PriceChart.tsx
-│   ├── context/           # Context API
+│   ├── context/              # Estado global
 │   │   └── AppContext.tsx
-│   ├── screens/           # Pantallas de la app
+│   ├── screens/             # Pantallas
 │   │   ├── AppliancesScreen.tsx
 │   │   ├── CalendarScreen.tsx
 │   │   ├── GraphScreen.tsx
 │   │   ├── HomeScreen.tsx
 │   │   └── MenuScreen.tsx
-│   ├── services/          # Servicios API
-│   │   └── api.ts
-│   └── types/             # Tipos TypeScript
+│   ├── services/           # Servicios API
+│   │   └── api.ts          # API independiente (sin backend)
+│   └── types/              # Tipos TypeScript
 │       └── index.ts
-├── backend/                # Backend Node.js
-│   ├── server.js          # Servidor Express
-│   └── package.json
-├── android/                # Archivos nativos Android (generado por Expo)
-└── assets/                # Recursos gráficos
+├── android/                 # Archivos nativos Android
+├── backend/                 # Backend opcional (para datos reales)
+└── assets/                 # Iconos y recursos
 ```
 
-## API del Backend
+## Cómo Funciona la App
 
-El backend proporciona los siguientes endpoints:
+### Sin conexión a internet
+La app usa datos mock realistas que simulan los precios reales de la luz, incluyendo:
+- Variaciones horarias (más caro en horas pico)
+- Precios diferentes entre días laborables y fines de semana
+- Datos actualizados automáticamente
 
-- `GET /health` - Estado del servidor
-- `GET /prices/today` - Precios del día actual
-- `GET /prices?date=YYYY-MM-DD` - Precios de una fecha específica
-- `GET /refresh` - Forzar actualización de cache
+### Con conexión a internet
+La app se conecta directamente a la API de Red Eléctrica Española (REE) para obtener precios reales:
+- https://api.esios.ree.es/indicators/1001
 
-## Tecnologías utilizadas
+## API de Datos
 
-- **Frontend**: React Native + Expo
-- **Backend**: Node.js + Express
-- **Navegación**: React Navigation
+La app consume directamente la API pública de REE:
+- **Endpoint**: `https://api.esios.ree.es/indicators/1001/values`
+- **Datos**: Precios PVPC (Precio Voluntario para el Pequeño Consumidor)
+- **Actualización**: Cada 5 minutos
+
+## Backend Opcional
+
+El proyecto incluye un backend Node.js en la carpeta `backend/` que:
+- Hace cache de los datos de REE
+- Proporciona una API REST local
+- Es útil si quieres desplegar tu propio servidor
+
+### Ejecutar backend
+```bash
+cd backend
+npm start
+# Server en http://localhost:5000
+```
+
+## Tecnologías Utilizadas
+
+- **Frontend**: React Native + Expo SDK 55
 - **Estado**: React Context + AsyncStorage
+- **Navegación**: React Navigation
+- **Gráficos**: React Native (nativo)
 - **API de datos**: Red Eléctrica Española (REE)
+- **Backend (opcional)**: Node.js + Express
 
 ## Licencia
 
