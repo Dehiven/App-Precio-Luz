@@ -12,6 +12,8 @@ import {
   AppliancesScreen,
   CalendarScreen,
   MenuScreen,
+  OptimalScheduleScreen,
+  SavingsTipsScreen,
 } from './src/screens';
 
 const Tab = createBottomTabNavigator();
@@ -26,20 +28,26 @@ const getTabBarIcon = (routeName: string, focused: boolean, color: string) => {
     case 'Graphs':
       iconName = focused ? 'stats-chart' : 'stats-chart-outline';
       break;
+    case 'Optimal':
+      iconName = focused ? 'time' : 'time-outline';
+      break;
     case 'Appliances':
       iconName = focused ? 'flash' : 'flash-outline';
       break;
     case 'Calendar':
       iconName = focused ? 'calendar' : 'calendar-outline';
       break;
-    case 'Menu':
-      iconName = focused ? 'menu' : 'menu-outline';
+    case 'Tips':
+      iconName = focused ? 'bulb' : 'bulb-outline';
+      break;
+    case 'Settings':
+      iconName = focused ? 'settings' : 'settings-outline';
       break;
     default:
       iconName = 'ellipse';
   }
 
-  return <Ionicons name={iconName} size={24} color={color} />;
+  return <Ionicons name={iconName} size={22} color={color} />;
 };
 
 export default function App() {
@@ -54,7 +62,7 @@ export default function App() {
                 headerShown: false,
                 tabBarStyle: styles.tabBar,
                 tabBarActiveTintColor: '#3498db',
-                tabBarInactiveTintColor: '#666',
+                tabBarInactiveTintColor: '#555',
                 tabBarIcon: ({ focused, color }) =>
                   getTabBarIcon(route.name, focused, color),
                 tabBarLabelStyle: styles.tabBarLabel,
@@ -71,6 +79,11 @@ export default function App() {
                 options={{ tabBarLabel: 'Gráficos' }}
               />
               <Tab.Screen
+                name="Optimal"
+                component={OptimalScheduleScreen}
+                options={{ tabBarLabel: 'Óptimo' }}
+              />
+              <Tab.Screen
                 name="Appliances"
                 component={AppliancesScreen}
                 options={{ tabBarLabel: 'Aparatos' }}
@@ -81,9 +94,14 @@ export default function App() {
                 options={{ tabBarLabel: 'Calendario' }}
               />
               <Tab.Screen
-                name="Menu"
+                name="Tips"
+                component={SavingsTipsScreen}
+                options={{ tabBarLabel: 'Ahorro' }}
+              />
+              <Tab.Screen
+                name="Settings"
                 component={MenuScreen}
-                options={{ tabBarLabel: 'Menú' }}
+                options={{ tabBarLabel: 'Ajustes' }}
               />
             </Tab.Navigator>
           </View>
@@ -101,8 +119,8 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#1a1a2e',
     borderTopWidth: 0,
-    height: 80,
-    paddingBottom: 20,
+    height: 85,
+    paddingBottom: 25,
     paddingTop: 10,
     position: 'absolute',
     left: 0,
@@ -111,7 +129,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   tabBarLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
 });

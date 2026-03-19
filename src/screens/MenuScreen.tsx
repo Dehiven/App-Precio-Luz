@@ -11,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
+import { NotificationsScreen } from './NotificationsScreen';
+import { useNavigation } from '@react-navigation/native';
 
 interface MenuItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -57,7 +59,7 @@ export const MenuScreen: React.FC = () => {
   const handleHelp = () => {
     Alert.alert(
       'Ayuda',
-      'Esta aplicación te permite:\n\n• Ver el precio actual de la luz\n• Consultar precios por horas\n• Visualizar gráficos de evolución\n• Gestionar tus electrodomésticos\n• Obtener recomendaciones de ahorro',
+      'Esta aplicación te permite:\n\n• Ver el precio actual de la luz\n• Consultar precios por horas\n• Visualizar gráficos de evolución\n• Gestionar tus electrodomésticos\n• Obtener recomendaciones de ahorro\n• Configurar notificaciones',
       [{ text: 'OK' }]
     );
   };
@@ -74,14 +76,6 @@ export const MenuScreen: React.FC = () => {
     Linking.openURL('https://www.ree.es/es/apidatos');
   };
 
-  const handleRefreshData = async () => {
-    Alert.alert(
-      'Datos',
-      'Esta aplicación usa datos de demostración.\n\nPara usar datos reales, necesitas:\n1. Obtener un token de la API de REE\n2. Configurar el token en la aplicación',
-      [{ text: 'OK' }]
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -91,9 +85,9 @@ export const MenuScreen: React.FC = () => {
               <Ionicons name="person" size={40} color="#3498db" />
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>Usuario</Text>
+              <Text style={styles.profileName}>Precio Luz</Text>
               <Text style={styles.profileSubtitle}>
-                {appliances.length} electrodomésticos configurados
+                {appliances.length} electrodomésticos
               </Text>
             </View>
           </View>
@@ -106,7 +100,7 @@ export const MenuScreen: React.FC = () => {
               icon="refresh"
               title="Actualizar datos"
               subtitle="Forzar actualización de precios"
-              onPress={handleRefreshData}
+              onPress={() => Alert.alert('Info', 'Desliza hacia abajo en Inicio para actualizar')}
             />
             <MenuItem
               icon="link"
@@ -124,22 +118,15 @@ export const MenuScreen: React.FC = () => {
               icon="trending-down"
               title="Horario óptimo"
               subtitle="Consulta las mejores horas"
-              onPress={() => {}}
+              onPress={() => Alert.alert('Info', 'Usa la pestaña "Óptimo" para ver el horario óptimo')}
               color="#2ecc71"
             />
             <MenuItem
               icon="bulb"
               title="Consejos de ahorro"
               subtitle="Recomendaciones personalizadas"
-              onPress={() => {}}
+              onPress={() => Alert.alert('Info', 'Usa la pestaña "Ahorro" para ver los consejos')}
               color="#f1c40f"
-            />
-            <MenuItem
-              icon="notifications"
-              title="Notificaciones"
-              subtitle="Alertas de precio"
-              onPress={() => {}}
-              color="#9b59b6"
             />
           </View>
         </View>
@@ -269,7 +256,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
     marginTop: 16,
-    marginBottom: 100,
+    marginBottom: 120,
   },
   footerText: {
     color: '#444',
