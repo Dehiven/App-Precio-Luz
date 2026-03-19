@@ -1,0 +1,81 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+*.apk
+*.aab
+*.ap_
+*.ipa
+*.dSYM.zip
+*.app
+
+# Expo
+.expo/
+dist/
+web-build/
+.expo-shared/
+
+# Native
+android/
+ios/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.xcuserstate
+*.xcworkspace
+
+# Metro
+.metro-health-check*
+.metro/
+.meter-bundler-cache/
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# macOS
+.DS_Store
+*.pem
+.Python
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Generated files
+*.hprof
+*.trace
+*.trace.gz
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+
+# Gradle
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Ruff
+.ruff_cache/
