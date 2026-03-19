@@ -223,9 +223,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 8,
   },
+  errorContent: {
+    flex: 1,
+  },
   errorText: {
     color: '#e74c3c',
     fontSize: 14,
+  },
+  errorHint: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 4,
   },
   tipsContainer: {
     padding: 16,

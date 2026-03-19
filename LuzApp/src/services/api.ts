@@ -12,6 +12,7 @@ interface REEApiResponse {
     values: Array<{
       datetime: string;
       value: number;
+      geo_id: number;
     }>;
   };
 }

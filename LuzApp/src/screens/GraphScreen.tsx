@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
-import { PriceChart } from '../components';
 import { fetchPricesForRange } from '../services/api';
 import { DailyPrices, TimeRange } from '../types';
 
@@ -19,44 +20,75 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const GraphScreen: React.FC = () => {
   const { hourlyPrices } = useApp();
   const [timeRange, setTimeRange] = useState<TimeRange>('day');
-  const [weeklyPrices, setWeeklyPrices] = useState<DailyPrices[]>([]);
+  const [priceData, setPriceData] = useState<DailyPrices[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadWeeklyData();
-  }, []);
-
-  const loadWeeklyData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const end = new Date();
       const start = new Date();
-      start.setDate(start.getDate() - 6);
+      
+      if (timeRange === 'day') {
+        start.setDate(start.getDate());
+      } else if (timeRange === 'week') {
+        start.setDate(start.getDate() - 6);
+      } else {
+        start.setDate(start.getDate() - 29);
+      }
+      
       const data = await fetchPricesForRange(start, end);
-      setWeeklyPrices(data);
+      setPriceData(data);
     } catch (error) {
-      console.error('Error loading weekly data:', error);
+      console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
+  }, [timeRange]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
   };
 
-  const getDailyChartData = () => {
-    if (weeklyPrices.length === 0) return hourlyPrices;
-    const today = weeklyPrices[weeklyPrices.length - 1];
-    return today?.prices || hourlyPrices;
+  const getDailyPrices = () => {
+    if (priceData.length === 0) return hourlyPrices;
+    return priceData[priceData.length - 1]?.prices || hourlyPrices;
   };
 
-  const getAverageChartData = (): { day: string; avg: number }[] => {
-    if (weeklyPrices.length === 0) return [];
-    
-    return weeklyPrices.map(day => {
-      const dayName = new Date(day.date).toLocaleDateString('es-ES', { weekday: 'short' });
-      return { day: dayName, avg: day.avgPrice };
-    });
+  const getWeeklyAverages = () => {
+    return priceData.map(day => ({
+      day: new Date(day.date).toLocaleDateString('es-ES', { weekday: 'short' }),
+      min: day.minPrice,
+      max: day.maxPrice,
+      avg: day.avgPrice,
+      date: day.date,
+    }));
   };
 
-  const averages = getAverageChartData();
+  const getMonthlyAverages = () => {
+    return priceData.map(day => ({
+      day: new Date(day.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+      min: day.minPrice,
+      max: day.maxPrice,
+      avg: day.avgPrice,
+      date: day.date,
+    }));
+  };
+
+  const currentPrices = getDailyPrices();
+  const weeklyData = getWeeklyAverages();
+  const monthlyData = getMonthlyAverages();
+
+  const minPrice = currentPrices.length > 0 ? Math.min(...currentPrices.map(p => p.price)) : 0;
+  const maxPrice = currentPrices.length > 0 ? Math.max(...currentPrices.map(p => p.price)) : 0;
+  const avgPrice = currentPrices.length > 0 ? currentPrices.reduce((a, b) => a + b.price, 0) / currentPrices.length : 0;
 
   const renderTimeRangeSelector = () => (
     <View style={styles.selectorContainer}>
@@ -74,104 +106,146 @@ export const GraphScreen: React.FC = () => {
     </View>
   );
 
-  const renderWeeklyBars = () => {
-    const data = getAverageChartData();
-    if (data.length === 0) return null;
-
-    const maxAvg = Math.max(...data.map((d: { avg: number }) => d.avg));
-    const minAvg = Math.min(...data.map((d: { avg: number }) => d.avg));
+  const renderHourlyBars = () => {
+    if (currentPrices.length === 0) return null;
+    const currentHour = new Date().getHours();
 
     return (
-      <View style={styles.barsContainer}>
-        {data.map((item: { day: string; avg: number }, index: number) => {
-          const height = (item.avg / maxAvg) * 120;
-          const isMin = item.avg === minAvg;
-          const isToday = index === data.length - 1;
-
-          return (
-            <View key={index} style={styles.barWrapper}>
-              <Text style={styles.barValue}>{item.avg.toFixed(2)}€</Text>
-              <View
-                style={[
-                  styles.bar,
-                  { height },
-                  isMin && styles.barOptimal,
-                  isToday && styles.barToday,
-                ]}
-              />
-              <Text style={[styles.barLabel, isToday && styles.barLabelToday]}>
-                {item.day}
-              </Text>
-              {isMin && (
-                <Ionicons
-                  name="star"
-                  size={12}
-                  color="#2ecc71"
-                  style={styles.optimalIcon}
+      <View style={styles.chartCard}>
+        <Text style={styles.chartTitle}>Precios por hora</Text>
+        <View style={styles.barsContainer}>
+          {currentPrices.map((item, index) => {
+            const barHeight = Math.max(4, ((item.price - minPrice) / (maxPrice - minPrice || 1)) * 100);
+            const isCurrent = item.hour === currentHour;
+            
+            return (
+              <View key={index} style={styles.barWrapper}>
+                <Text style={[styles.barPrice, isCurrent && styles.currentText]}>
+                  {item.price.toFixed(2)}
+                </Text>
+                <View
+                  style={[
+                    styles.bar,
+                    { height: barHeight },
+                    isCurrent && styles.currentBar,
+                    !isCurrent && item.price <= avgPrice && styles.lowBar,
+                    !isCurrent && item.price > avgPrice && styles.highBar,
+                  ]}
                 />
-              )}
-            </View>
-          );
-        })}
+                <Text style={[styles.barHour, isCurrent && styles.currentText]}>
+                  {item.hour.toString().padStart(2, '0')}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
       </View>
     );
   };
 
+  const renderDailyAverages = (data: typeof weeklyData, title: string) => {
+    if (data.length === 0) return null;
+    
+    const maxAvg = Math.max(...data.map(d => d.avg));
+    const minAvg = Math.min(...data.map(d => d.avg));
+    const today = new Date().toISOString().split('T')[0];
+
+    return (
+      <View style={styles.chartCard}>
+        <Text style={styles.chartTitle}>{title}</Text>
+        <View style={styles.dailyBarsContainer}>
+          {data.map((item, index) => {
+            const barHeight = Math.max(8, (item.avg / maxAvg) * 120);
+            const isToday = item.date === today;
+            
+            return (
+              <View key={index} style={styles.dailyBarWrapper}>
+                <Text style={styles.dailyPrice}>{item.avg.toFixed(2)}€</Text>
+                <View
+                  style={[
+                    styles.dailyBar,
+                    { height: barHeight },
+                    isToday && styles.todayBar,
+                    item.avg === minAvg && styles.optimalBar,
+                  ]}
+                />
+                <Text style={[styles.dailyLabel, isToday && styles.todayText]}>
+                  {item.day}
+                </Text>
+                {item.avg === minAvg && (
+                  <Ionicons name="star" size={10} color="#2ecc71" style={styles.optimalIcon} />
+                )}
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
+  if (isLoading && priceData.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3498db" />
+          <Text style={styles.loadingText}>Cargando datos...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3498db" />
+        }
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Gráficos</Text>
-          <Text style={styles.subtitle}>Evolución del precio de la luz</Text>
+          <Text style={styles.subtitle}>Precios de la luz</Text>
         </View>
 
         {renderTimeRangeSelector()}
 
-        <View style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>Precio por hora</Text>
-          <PriceChart
-            prices={timeRange === 'day' ? getDailyChartData() : hourlyPrices}
-            title=""
-          />
-        </View>
-
-        <View style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>Precios de la semana</Text>
-          {renderWeeklyBars()}
-        </View>
+        {timeRange === 'day' ? (
+          renderHourlyBars()
+        ) : (
+          renderDailyAverages(
+            timeRange === 'week' ? weeklyData : monthlyData,
+            timeRange === 'week' ? 'Precios semanal' : 'Precios mensual'
+          )
+        )}
 
         <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>Estadísticas</Text>
+          <Text style={styles.sectionTitle}>Resumen</Text>
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <Ionicons name="trending-down" size={24} color="#2ecc71" />
-              <Text style={styles.statLabel}>Precio mínimo</Text>
-              <Text style={styles.statValue}>
-                {Math.min(...(weeklyPrices.length > 0 ? weeklyPrices.map(d => d.minPrice) : hourlyPrices.map(p => p.price))).toFixed(3)}€
+              <View style={[styles.statIcon, { backgroundColor: 'rgba(46, 204, 113, 0.2)' }]}>
+                <Ionicons name="arrow-down" size={20} color="#2ecc71" />
+              </View>
+              <Text style={styles.statLabel}>Mínimo</Text>
+              <Text style={[styles.statValue, { color: '#2ecc71' }]}>
+                {minPrice.toFixed(3)}€
               </Text>
             </View>
             <View style={styles.statCard}>
-              <Ionicons name="trending-up" size={24} color="#e74c3c" />
-              <Text style={styles.statLabel}>Precio máximo</Text>
-              <Text style={styles.statValue}>
-                {Math.max(...(weeklyPrices.length > 0 ? weeklyPrices.map(d => d.maxPrice) : hourlyPrices.map(p => p.price))).toFixed(3)}€
+              <View style={[styles.statIcon, { backgroundColor: 'rgba(243, 156, 18, 0.2)' }]}>
+                <Ionicons name="remove" size={20} color="#f1c40f" />
+              </View>
+              <Text style={styles.statLabel}>Media</Text>
+              <Text style={[styles.statValue, { color: '#f1c40f' }]}>
+                {avgPrice.toFixed(3)}€
               </Text>
             </View>
             <View style={styles.statCard}>
-              <Ionicons name="analytics" size={24} color="#3498db" />
-              <Text style={styles.statLabel}>Precio medio</Text>
-              <Text style={styles.statValue}>
-                {(weeklyPrices.length > 0
-                  ? weeklyPrices.reduce((sum, d) => sum + d.avgPrice, 0) / weeklyPrices.length
-                  : hourlyPrices.reduce((sum, p) => sum + p.price, 0) / hourlyPrices.length
-                ).toFixed(3)}€
-              </Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name="time" size={24} color="#f1c40f" />
-              <Text style={styles.statLabel}>Hora actual</Text>
-              <Text style={styles.statValue}>
-                {hourlyPrices[new Date().getHours()]?.price.toFixed(3) || '0.000'}€
+              <View style={[styles.statIcon, { backgroundColor: 'rgba(231, 76, 60, 0.2)' }]}>
+                <Ionicons name="arrow-up" size={20} color="#e74c3c" />
+              </View>
+              <Text style={styles.statLabel}>Máximo</Text>
+              <Text style={[styles.statValue, { color: '#e74c3c' }]}>
+                {maxPrice.toFixed(3)}€
               </Text>
             </View>
           </View>
@@ -185,6 +259,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f0f1a',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#888',
+    marginTop: 16,
+    fontSize: 16,
   },
   header: {
     padding: 16,
@@ -223,54 +307,90 @@ const styles = StyleSheet.create({
   selectorTextActive: {
     color: '#fff',
   },
-  chartSection: {
-    marginTop: 16,
+  chartCard: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 16,
+    padding: 16,
+    margin: 16,
   },
-  sectionTitle: {
+  chartTitle: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   barsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'flex-end',
-    backgroundColor: '#1a1a2e',
-    marginHorizontal: 16,
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 8,
-    height: 220,
+    justifyContent: 'space-between',
+    height: 140,
   },
   barWrapper: {
     alignItems: 'center',
     flex: 1,
   },
-  bar: {
-    width: 24,
-    backgroundColor: '#555',
-    borderRadius: 4,
-    marginTop: 8,
+  barPrice: {
+    color: '#555',
+    fontSize: 7,
+    marginBottom: 4,
   },
-  barOptimal: {
+  bar: {
+    width: 10,
+    borderRadius: 5,
+    minHeight: 4,
+  },
+  currentBar: {
+    backgroundColor: '#3498db',
+  },
+  lowBar: {
     backgroundColor: '#2ecc71',
   },
-  barToday: {
+  highBar: {
+    backgroundColor: '#e74c3c',
+  },
+  barHour: {
+    color: '#555',
+    fontSize: 9,
+    marginTop: 6,
+  },
+  currentText: {
+    color: '#3498db',
+    fontWeight: 'bold',
+  },
+  dailyBarsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 180,
+  },
+  dailyBarWrapper: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  dailyPrice: {
+    color: '#666',
+    fontSize: 10,
+    marginBottom: 4,
+  },
+  dailyBar: {
+    width: 24,
+    backgroundColor: '#555',
+    borderRadius: 6,
+    minHeight: 8,
+  },
+  todayBar: {
     borderWidth: 2,
     borderColor: '#3498db',
   },
-  barValue: {
-    color: '#888',
-    fontSize: 10,
+  optimalBar: {
+    backgroundColor: '#2ecc71',
   },
-  barLabel: {
+  dailyLabel: {
     color: '#666',
     fontSize: 10,
     marginTop: 8,
   },
-  barLabelToday: {
+  todayText: {
     color: '#3498db',
     fontWeight: 'bold',
   },
@@ -278,30 +398,41 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   statsSection: {
-    marginTop: 24,
+    marginTop: 8,
     marginBottom: 100,
+    paddingHorizontal: 16,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
   },
   statsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 12,
+    gap: 12,
   },
   statCard: {
-    width: (SCREEN_WIDTH - 48) / 2,
+    flex: 1,
     backgroundColor: '#1a1a2e',
     borderRadius: 12,
     padding: 16,
-    margin: 4,
     alignItems: 'center',
+  },
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   statLabel: {
     color: '#888',
     fontSize: 12,
-    marginTop: 8,
   },
   statValue: {
-    color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginTop: 4,
   },
