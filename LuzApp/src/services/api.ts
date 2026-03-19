@@ -5,10 +5,7 @@ const REE_API_TOKEN = '454b7c51532f99c87cd532ed28e16abb6feaf0e16d2ca270c2e9b1044
 
 let cachedPrices: DailyPrices | null = null;
 let lastFetchTime: number = 0;
-let lastFetchWasReal: boolean = false;
 const CACHE_DURATION = 5 * 60 * 1000;
-
-export const wasLastFetchReal = (): boolean => lastFetchWasReal;
 
 interface REEApiResponse {
   indicator: {
@@ -19,44 +16,6 @@ interface REEApiResponse {
     }>;
   };
 }
-
-export const generateMockPrices = (date: Date): HourlyPrice[] => {
-  const prices: HourlyPrice[] = [];
-  const today = new Date(date);
-  const dayOfWeek = today.getDay();
-  
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-  const basePrice = isWeekend ? 0.11 : 0.14;
-  
-  for (let hour = 0; hour < 24; hour++) {
-    let priceMultiplier = 1.0;
-    
-    if (hour >= 0 && hour < 8) {
-      priceMultiplier = 0.7 + Math.random() * 0.2;
-    } else if (hour >= 8 && hour < 12) {
-      priceMultiplier = 1.2 + Math.random() * 0.3;
-    } else if (hour >= 12 && hour < 14) {
-      priceMultiplier = 1.0 + Math.random() * 0.2;
-    } else if (hour >= 14 && hour < 18) {
-      priceMultiplier = 1.1 + Math.random() * 0.3;
-    } else if (hour >= 18 && hour < 22) {
-      priceMultiplier = 1.3 + Math.random() * 0.4;
-    } else {
-      priceMultiplier = 0.6 + Math.random() * 0.2;
-    }
-    
-    const variation = (Math.random() - 0.5) * 0.03;
-    const price = Math.max(0.05, Math.min(0.30, (basePrice + variation) * priceMultiplier));
-    
-    prices.push({
-      hour,
-      price: Math.round(price * 1000) / 1000,
-      date: date.toISOString().split('T')[0],
-    });
-  }
-  
-  return prices.sort((a, b) => a.hour - b.hour);
-};;
 
 const calculateStats = (prices: HourlyPrice[]) => {
   if (prices.length === 0) {
@@ -75,47 +34,41 @@ const calculateStats = (prices: HourlyPrice[]) => {
   };
 };
 
-const fetchFromREEApi = async (date: Date): Promise<{ prices: HourlyPrice[]; isReal: boolean } | null> => {
-  try {
-    const dateStr = date.toISOString().split('T')[0];
-    const response = await fetch(
-      `${REE_API_URL}/indicators/1001/values?start_date=${dateStr}T00:00:00&end_date=${dateStr}T23:59:59`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Token token="${REE_API_TOKEN}"`
-        }
+const fetchFromREEApi = async (date: Date): Promise<HourlyPrice[]> => {
+  const dateStr = date.toISOString().split('T')[0];
+  const response = await fetch(
+    `${REE_API_URL}/indicators/1001/values?start_date=${dateStr}T00:00:00&end_date=${dateStr}T23:59:59`,
+    {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Token token="${REE_API_TOKEN}"`
       }
-    );
-    
-    if (!response.ok) {
-      console.log(`REE API error: ${response.status}, usando datos simulados`);
-      return null;
     }
-    
-    const data: REEApiResponse = await response.json();
-    
-    if (data.indicator?.values && data.indicator.values.length > 0) {
-      const prices = data.indicator.values
-        .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
-        .map((v) => {
-          const hour = new Date(v.datetime).getHours();
-          return {
-            hour,
-            price: Math.round((v.value / 1000) * 1000) / 1000,
-            date: dateStr,
-          };
-        });
-      
-      return { prices, isReal: true };
-    }
-    
-    return null;
-  } catch (error) {
-    console.log('Error conectando con REE API:', error);
-    return null;
+  );
+  
+  if (!response.ok) {
+    throw new Error(`Error API REE: ${response.status}`);
   }
+  
+  const data: REEApiResponse = await response.json();
+  
+  if (!data.indicator?.values || data.indicator.values.length === 0) {
+    throw new Error('No se recibieron datos de la API');
+  }
+  
+  const prices = data.indicator.values
+    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
+    .map((v) => {
+      const hour = new Date(v.datetime).getHours();
+      return {
+        hour,
+        price: Math.round((v.value / 1000) * 1000) / 1000,
+        date: dateStr,
+      };
+    });
+  
+  return prices;
 };
 
 export const fetchTodayPrices = async (): Promise<DailyPrices> => {
@@ -128,25 +81,13 @@ export const fetchTodayPrices = async (): Promise<DailyPrices> => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  let prices: HourlyPrice[];
-  
-  const apiResult = await fetchFromREEApi(today);
-  
-  if (apiResult && apiResult.isReal) {
-    prices = apiResult.prices;
-    lastFetchWasReal = true;
-  } else {
-    prices = generateMockPrices(today);
-    lastFetchWasReal = false;
-  }
-  
-  prices = prices.sort((a, b) => a.hour - b.hour);
-  
-  const stats = calculateStats(prices);
+  const prices = await fetchFromREEApi(today);
+  const sortedPrices = prices.sort((a, b) => a.hour - b.hour);
+  const stats = calculateStats(sortedPrices);
   
   cachedPrices = {
     date: today.toISOString().split('T')[0],
-    prices,
+    prices: sortedPrices,
     minPrice: stats.min,
     maxPrice: stats.max,
     avgPrice: stats.avg,
@@ -161,23 +102,13 @@ export const fetchPricesByDate = async (date: Date): Promise<DailyPrices> => {
   const normalizedDate = new Date(date);
   normalizedDate.setHours(0, 0, 0, 0);
   
-  const apiResult = await fetchFromREEApi(normalizedDate);
-  
-  let prices: HourlyPrice[];
-  
-  if (apiResult && apiResult.isReal) {
-    prices = apiResult.prices;
-  } else {
-    prices = generateMockPrices(normalizedDate);
-  }
-  
-  prices = prices.sort((a, b) => a.hour - b.hour);
-  
-  const stats = calculateStats(prices);
+  const prices = await fetchFromREEApi(normalizedDate);
+  const sortedPrices = prices.sort((a, b) => a.hour - b.hour);
+  const stats = calculateStats(sortedPrices);
   
   return {
     date: normalizedDate.toISOString().split('T')[0],
-    prices,
+    prices: sortedPrices,
     minPrice: stats.min,
     maxPrice: stats.max,
     avgPrice: stats.avg,

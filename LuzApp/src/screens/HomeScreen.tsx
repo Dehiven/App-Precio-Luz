@@ -22,7 +22,7 @@ const formatDate = (date: Date) => {
 };
 
 export const HomeScreen: React.FC = () => {
-  const { currentPrice, hourlyPrices, isLoading, error, refreshPrices, lastUpdated, isRealData } = useApp();
+  const { currentPrice, hourlyPrices, isLoading, error, refreshPrices, lastUpdated } = useApp();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -86,17 +86,6 @@ export const HomeScreen: React.FC = () => {
               </Text>
             )}
           </View>
-        </View>
-
-        <View style={[styles.dataSourceBadge, isRealData ? styles.realDataBadge : styles.mockDataBadge]}>
-          <Ionicons 
-            name={isRealData ? 'checkmark-circle' : 'information-circle'} 
-            size={14} 
-            color={isRealData ? '#2ecc71' : '#f39c12'} 
-          />
-          <Text style={[styles.dataSourceText, { color: isRealData ? '#2ecc71' : '#f39c12' }]}>
-            {isRealData ? 'Datos reales - API REE' : 'Datos de prueba - Token no configurado'}
-          </Text>
         </View>
 
         {error && (
@@ -206,27 +195,6 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     alignItems: 'flex-end',
-  },
-  dataSourceBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 16,
-    marginBottom: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    gap: 6,
-  },
-  realDataBadge: {
-    backgroundColor: 'rgba(46, 204, 113, 0.15)',
-  },
-  mockDataBadge: {
-    backgroundColor: 'rgba(243, 156, 18, 0.15)',
-  },
-  dataSourceText: {
-    fontSize: 12,
-    fontWeight: '500',
   },
   date: {
     color: '#666',

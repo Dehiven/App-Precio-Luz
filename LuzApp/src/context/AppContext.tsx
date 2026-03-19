@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HourlyPrice, Appliance, DailyPrices, PriceStats } from '../types';
-import { fetchTodayPrices, fetchPricesByDate, wasLastFetchReal } from '../services/api';
+import { fetchTodayPrices, fetchPricesByDate } from '../services/api';
 
 interface AppContextType {
   hourlyPrices: HourlyPrice[];
@@ -10,7 +10,6 @@ interface AppContextType {
   selectedDate: Date;
   isLoading: boolean;
   error: string | null;
-  isRealData: boolean;
   lastUpdated: Date | null;
   refreshPrices: () => Promise<void>;
   addAppliance: (appliance: Omit<Appliance, 'id'>) => Promise<void>;
@@ -30,7 +29,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isRealData, setIsRealData] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const loadAppliances = async () => {
@@ -59,7 +57,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const data: DailyPrices = await fetchTodayPrices();
       setHourlyPrices(data.prices);
       setLastUpdated(new Date());
-      setIsRealData(wasLastFetchReal());
       
       const currentHour = new Date().getHours();
       const currentHourPrice = data.prices.find(p => p.hour === currentHour);
@@ -128,7 +125,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         selectedDate,
         isLoading,
         error,
-        isRealData,
         lastUpdated,
         refreshPrices,
         addAppliance,
