@@ -1,0 +1,36 @@
+{
+  "name": "luzapp",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "start:backend": "cd backend && npm start",
+    "dev": "concurrently \"npm run start:backend\" \"npm start\"",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "prebuild": "expo prebuild",
+    "build:android": "expo prebuild --platform android && cd android && ./gradlew assembleRelease",
+    "build:android:debug": "expo prebuild --platform android && cd android && ./gradlew assembleDebug",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "^3.0.1",
+    "@react-navigation/bottom-tabs": "^7.15.5",
+    "@react-navigation/native": "^7.1.33",
+    "expo": "~55.0.7",
+    "expo-status-bar": "~55.0.4",
+    "react": "19.2.0",
+    "react-native": "0.83.2",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.24.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "concurrently": "^9.1.0",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
