@@ -149,4 +149,4 @@ MIT License
 
 ## Autor
 
-Precio Luz App - 2024
+Dehiven Code - 2026
