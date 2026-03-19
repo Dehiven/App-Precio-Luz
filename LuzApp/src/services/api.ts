@@ -1,7 +1,6 @@
 import { HourlyPrice, DailyPrices, Appliance } from '../types';
 
 const REE_API_URL = 'https://api.esios.ree.es';
-const REE_API_TOKEN = '454b7c51532f99c87cd532ed28e16abb6feaf0e16d2ca270c2e9b1044eb40ed2';
 
 let cachedPrices: DailyPrices | null = null;
 let lastFetchTime: number = 0;
@@ -36,13 +35,14 @@ const calculateStats = (prices: HourlyPrice[]) => {
 
 const fetchFromREEApi = async (date: Date): Promise<HourlyPrice[]> => {
   const dateStr = date.toISOString().split('T')[0];
+  const dateStrApi = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  
   const response = await fetch(
-    `${REE_API_URL}/indicators/1001/values?start_date=${dateStr}T00:00:00&end_date=${dateStr}T23:59:59`,
+    `${REE_API_URL}/indicators/1001`,
     {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Token token="${REE_API_TOKEN}"`
       }
     }
   );
@@ -57,7 +57,15 @@ const fetchFromREEApi = async (date: Date): Promise<HourlyPrice[]> => {
     throw new Error('No se recibieron datos de la API');
   }
   
-  const prices = data.indicator.values
+  const peninsulaValues = data.indicator.values.filter(
+    (v) => v.geo_id === 8741 && v.datetime.startsWith(dateStrApi)
+  );
+  
+  if (peninsulaValues.length === 0) {
+    throw new Error('No hay datos disponibles para esta fecha');
+  }
+  
+  const prices = peninsulaValues
     .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
     .map((v) => {
       const hour = new Date(v.datetime).getHours();

@@ -90,8 +90,16 @@ export const HomeScreen: React.FC = () => {
 
         {error && (
           <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle" size={20} color="#e74c3c" />
-            <Text style={styles.errorText}>{error}</Text>
+            <Ionicons name="alert-circle" size={24} color="#e74c3c" />
+            <View style={styles.errorContent}>
+              <Text style={styles.errorText}>{error}</Text>
+              {error.includes('Token') && (
+                <Text style={styles.errorHint}>
+                  Obtén tu token gratis en:{'\n'}
+                  api.esios.ree.es/apidatos
+                </Text>
+              )}
+            </View>
           </View>
         )}
 
