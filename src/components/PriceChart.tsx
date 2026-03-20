@@ -100,11 +100,11 @@ export const PriceChart: React.FC<PriceChartProps> = ({
       
       <View style={styles.xAxis}>
         {[
-          { hour: 0, label: '00h' },
-          { hour: 6, label: '06h' },
-          { hour: 12, label: '12h' },
-          { hour: 18, label: '18h' },
-          { hour: 23, label: '23h' },
+          { hour: 0, label: '00' },
+          { hour: 6, label: '06' },
+          { hour: 12, label: '12' },
+          { hour: 18, label: '18' },
+          { hour: 23, label: '23' },
         ].map(item => (
           <Text key={item.hour} style={styles.xAxisLabel}>
             {item.label}
