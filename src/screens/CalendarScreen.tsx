@@ -89,13 +89,15 @@ export const CalendarScreen: React.FC = () => {
       currentMonth.getFullYear() === now.getFullYear();
     
     if (isToday) return '#3498db';
-    if (!dayData) return '#1a1a2e';
+    if (!dayData) return '#252540';
     
     const avg = dayData.avgPrice;
-    if (avg < 0.12) return '#1d4a3a';
-    if (avg < 0.15) return '#2ecc71';
-    if (avg < 0.18) return '#f39c12';
-    return '#5a2a2a';
+    if (avg < 0.10) return '#14532d';
+    if (avg < 0.12) return '#166534';
+    if (avg < 0.14) return '#22c55e';
+    if (avg < 0.16) return '#eab308';
+    if (avg < 0.18) return '#f97316';
+    return '#dc2626';
   };
 
   const isSelected = (day: number) => {
@@ -232,8 +234,6 @@ export const CalendarScreen: React.FC = () => {
                     <Text style={[
                       styles.dayText, 
                       isSelected(day) && styles.dayTextSelected,
-                      getDayPrice(day) && getDayPrice(day)!.avgPrice < 0.15 && styles.dayTextGreen,
-                      getDayPrice(day) && getDayPrice(day)!.avgPrice > 0.18 && styles.dayTextRed,
                     ]}>
                       {day}
                     </Text>
@@ -250,16 +250,16 @@ export const CalendarScreen: React.FC = () => {
 
           <View style={styles.legend}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#2ecc71' }]} />
-              <Text style={styles.legendText}>Bajo (&lt;0.15€)</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#22c55e' }]} />
+              <Text style={styles.legendText}>Barato</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#f39c12' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#eab308' }]} />
               <Text style={styles.legendText}>Medio</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#e74c3c' }]} />
-              <Text style={styles.legendText}>Alto (&gt;0.18€)</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#dc2626' }]} />
+              <Text style={styles.legendText}>Caro</Text>
             </View>
           </View>
         </View>

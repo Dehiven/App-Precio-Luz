@@ -10,8 +10,7 @@ interface PriceChartProps {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_PADDING = 16;
-const Y_AXIS_WIDTH = 45;
-const CHART_WIDTH = SCREEN_WIDTH - (CHART_PADDING * 2) - Y_AXIS_WIDTH - 16;
+const CHART_WIDTH = SCREEN_WIDTH - (CHART_PADDING * 2) - 16;
 
 export const PriceChart: React.FC<PriceChartProps> = ({ 
   prices, 
@@ -28,9 +27,10 @@ export const PriceChart: React.FC<PriceChartProps> = ({
     const minPrice = Math.min(...values);
     const maxPrice = Math.max(...values);
     const range = maxPrice - minPrice || 0.01;
+    const barWidth = (CHART_WIDTH - 32) / 24;
     
     const points = data.map((point, index) => ({
-      x: (index / 23) * CHART_WIDTH,
+      x: 16 + (index * barWidth),
       y: height - 40 - ((point.price - minPrice) / range) * (height - 80),
       price: point.price,
       hour: point.hour,
@@ -58,12 +58,6 @@ export const PriceChart: React.FC<PriceChartProps> = ({
       {title && <Text style={styles.title}>{title}</Text>}
       
       <View style={[styles.chartArea, { height: height + 20 }]}>
-        <View style={styles.yAxis}>
-          <Text style={styles.axisLabel}>{chartData.maxPrice.toFixed(3)}€</Text>
-          <Text style={styles.axisLabel}>{(chartData.minPrice + (chartData.maxPrice - chartData.minPrice) / 2).toFixed(3)}€</Text>
-          <Text style={styles.axisLabel}>{chartData.minPrice.toFixed(3)}€</Text>
-        </View>
-        
         <View style={styles.chartContainer}>
           <View style={styles.gridLines}>
             {[0, 1, 2, 3].map((_, i) => (
@@ -79,7 +73,7 @@ export const PriceChart: React.FC<PriceChartProps> = ({
           
           <View style={styles.barsContainer}>
             {chartData.points.map((point, index) => {
-              const barHeight = Math.max(4, ((point.price - chartData.minPrice) / (chartData.maxPrice - chartData.minPrice)) * (height - 60));
+              const barHeight = Math.max(8, ((point.price - chartData.minPrice) / (chartData.maxPrice - chartData.minPrice)) * (height - 60));
               
               return (
                 <View
@@ -94,38 +88,26 @@ export const PriceChart: React.FC<PriceChartProps> = ({
                           ? '#e74c3c' 
                           : point.isCurrent 
                             ? '#3498db' 
-                            : '#555',
+                            : '#4a5568',
                     },
                   ]}
                 />
               );
             })}
           </View>
-          
-          {chartData.points.map((point, index) => (
-            index < chartData.points.length - 1 && (
-              <View
-                key={`line-${index}`}
-                style={[
-                  styles.line,
-                  {
-                    left: point.x + 2,
-                    width: CHART_WIDTH / 23 - 4,
-                    bottom: height - 50 - point.y,
-                    height: Math.abs(chartData.points[index + 1].y - point.y),
-                    backgroundColor: chartData.points[index + 1].y < point.y ? '#2ecc71' : '#e74c3c',
-                  },
-                ]}
-              />
-            )
-          ))}
         </View>
       </View>
       
       <View style={styles.xAxis}>
-        {[0, 6, 12, 18, 23].map(hour => (
-          <Text key={hour} style={styles.xAxisLabel}>
-            {hour.toString().padStart(2, '0')}:00
+        {[
+          { hour: 0, label: '00h' },
+          { hour: 6, label: '06h' },
+          { hour: 12, label: '12h' },
+          { hour: 18, label: '18h' },
+          { hour: 23, label: '23h' },
+        ].map(item => (
+          <Text key={item.hour} style={styles.xAxisLabel}>
+            {item.label}
           </Text>
         ))}
       </View>
@@ -170,17 +152,6 @@ const styles = StyleSheet.create({
   chartArea: {
     flexDirection: 'row',
   },
-  yAxis: {
-    width: Y_AXIS_WIDTH,
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingRight: 8,
-    paddingVertical: 10,
-  },
-  axisLabel: {
-    color: '#666',
-    fontSize: 9,
-  },
   chartContainer: {
     flex: 1,
     position: 'relative',
@@ -202,8 +173,8 @@ const styles = StyleSheet.create({
   barsContainer: {
     position: 'absolute',
     bottom: 30,
-    left: 0,
-    right: 0,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
@@ -211,20 +182,15 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   bar: {
-    width: 8,
-    borderRadius: 4,
-    minHeight: 4,
-  },
-  line: {
-    position: 'absolute',
-    borderRadius: 2,
+    width: 10,
+    borderRadius: 5,
+    minHeight: 8,
   },
   xAxis: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
-    paddingLeft: Y_AXIS_WIDTH,
-    paddingRight: 8,
+    paddingHorizontal: 16,
   },
   xAxisLabel: {
     color: '#666',
