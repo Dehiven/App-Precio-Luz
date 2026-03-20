@@ -4,7 +4,7 @@
     "slug": "PrecioLuz",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/LogoAppPrecioLuz.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/LogoAppPrecioLuz.png",
         "backgroundColor": "#0f0f1a"
       },
       "package": "com.precioluz.app",

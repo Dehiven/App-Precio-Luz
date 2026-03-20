@@ -81,7 +81,7 @@ export const AppliancesScreen: React.FC = () => {
         <View style={styles.optimalHours}>
           {optimalHours.map(hour => (
             <View key={hour} style={styles.optimalHour}>
-              <Text style={styles.optimalHourText}>{hour}:00</Text>
+              <Text style={styles.optimalHourText}>{hour}</Text>
               <Text style={styles.optimalPriceText}>
                 {hourlyPrices.find(p => p.hour === hour)?.price.toFixed(3) || '0.000'}€
               </Text>

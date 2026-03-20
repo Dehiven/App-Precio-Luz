@@ -70,9 +70,6 @@ export const PriceChart: React.FC<PriceChartProps> = ({
         <View style={styles.barsContainer}>
           {chartData.points.map((point, index) => (
             <View key={index} style={styles.barWrapper}>
-              <Text style={[styles.priceLabel, point.isCurrent && styles.currentText]}>
-                {point.price.toFixed(2)}
-              </Text>
               <View
                 style={[
                   styles.bar,

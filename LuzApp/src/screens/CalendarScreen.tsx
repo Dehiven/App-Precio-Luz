@@ -23,6 +23,16 @@ export const CalendarScreen: React.FC = () => {
   const [selectedDayPrices, setSelectedDayPrices] = useState<DailyPrices | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!isInitialized) {
+      const today = new Date();
+      setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+      setSelectedDate(today);
+      setIsInitialized(true);
+    }
+  }, [isInitialized, setSelectedDate]);
 
   const loadMonthData = useCallback(async () => {
     const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -92,10 +102,12 @@ export const CalendarScreen: React.FC = () => {
     if (!dayData) return '#1a1a2e';
     
     const avg = dayData.avgPrice;
-    if (avg < 0.12) return '#1d4a3a';
-    if (avg < 0.15) return '#2ecc71';
-    if (avg < 0.18) return '#f39c12';
-    return '#5a2a2a';
+    if (avg < 0.10) return '#14532d';
+    if (avg < 0.12) return '#166534';
+    if (avg < 0.14) return '#22c55e';
+    if (avg < 0.16) return '#eab308';
+    if (avg < 0.18) return '#f97316';
+    return '#dc2626';
   };
 
   const isSelected = (day: number) => {
@@ -163,7 +175,7 @@ export const CalendarScreen: React.FC = () => {
                 ]}
               >
                 <Text style={[styles.hourTime, isNow && styles.hourTimeActive]}>
-                  {price.hour.toString().padStart(2, '0')}:00
+                  {price.hour.toString().padStart(2, '0')}
                 </Text>
                 <Text style={[
                   styles.hourPrice,
@@ -250,16 +262,16 @@ export const CalendarScreen: React.FC = () => {
 
           <View style={styles.legend}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#2ecc71' }]} />
-              <Text style={styles.legendText}>Bajo (&lt;0.15€)</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#22c55e' }]} />
+              <Text style={styles.legendText}>Barato</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#f39c12' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#eab308' }]} />
               <Text style={styles.legendText}>Medio</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#e74c3c' }]} />
-              <Text style={styles.legendText}>Alto (&gt;0.18€)</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#dc2626' }]} />
+              <Text style={styles.legendText}>Caro</Text>
             </View>
           </View>
         </View>
@@ -279,7 +291,7 @@ export const CalendarScreen: React.FC = () => {
                 <Ionicons name="sunny" size={24} color="#f1c40f" />
                 <Text style={styles.summaryLabel}>Más económico</Text>
                 <Text style={styles.summaryValue}>
-                  {getOptimalHour()?.hour}:00 - {getOptimalHour()?.price.toFixed(3)}€
+                  {getOptimalHour()?.hour} - {getOptimalHour()?.price.toFixed(3)}€
                 </Text>
               </View>
               <View style={styles.summaryDivider} />
@@ -287,7 +299,7 @@ export const CalendarScreen: React.FC = () => {
                 <Ionicons name="flame" size={24} color="#e74c3c" />
                 <Text style={styles.summaryLabel}>Más caro</Text>
                 <Text style={styles.summaryValue}>
-                  {getWorstHour()?.hour}:00 - {getWorstHour()?.price.toFixed(3)}€
+                  {getWorstHour()?.hour} - {getWorstHour()?.price.toFixed(3)}€
                 </Text>
               </View>
             </View>

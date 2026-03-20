@@ -157,7 +157,7 @@ export const OptimalScheduleScreen: React.FC = () => {
                     <Ionicons name="star" size={16} color="#f1c40f" />
                     <Text style={styles.optimalRankText}>#{index + 1}</Text>
                   </View>
-                  <Text style={styles.optimalHour}>{hour.toString().padStart(2, '0')}:00</Text>
+                  <Text style={styles.optimalHour}>{hour.toString().padStart(2, '0')}</Text>
                   <Text style={styles.optimalPrice}>{price?.price.toFixed(3)}€</Text>
                   <Text style={styles.optimalSaving}>
                     -{((analysis.avgPrice - (price?.price || 0)) / analysis.avgPrice * 100).toFixed(0)}% vs media
@@ -178,7 +178,7 @@ export const OptimalScheduleScreen: React.FC = () => {
                   <View style={styles.worstRank}>
                     <Text style={styles.worstRankText}>{index + 1}</Text>
                   </View>
-                  <Text style={styles.worstHour}>{hour.toString().padStart(2, '0')}:00</Text>
+                  <Text style={styles.worstHour}>{hour.toString().padStart(2, '0')}</Text>
                   <Text style={styles.worstPrice}>{price?.price.toFixed(3)}€</Text>
                   <Ionicons name="close-circle" size={20} color="#e74c3c" />
                 </View>
