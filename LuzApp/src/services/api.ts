@@ -5,6 +5,8 @@ const REE_API_URL = 'https://api.esios.ree.es';
 let cachedPrices: DailyPrices | null = null;
 let lastFetchTime: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000;
+let lastApiSuccess: boolean = true;
+let useFallback: boolean = false;
 
 interface REEApiResponse {
   indicator: {
@@ -34,27 +36,37 @@ const calculateStats = (prices: HourlyPrice[]) => {
   };
 };
 
-const generateRealisticPrices = (date: Date): HourlyPrice[] => {
+const generateDeterministicPrices = (date: Date): HourlyPrice[] => {
   const prices: HourlyPrice[] = [];
-  const basePrice = 0.14;
   const dateStr = date.toISOString().split('T')[0];
+  const daySeed = new Date(date).getDate() + new Date(date).getMonth() * 31 + new Date(date).getFullYear() * 366;
+  
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
   
   for (let hour = 0; hour < 24; hour++) {
+    const seed = daySeed * 24 + hour;
+    const rand1 = seededRandom(seed);
+    const rand2 = seededRandom(seed + 1000);
+    
+    let basePrice = 0.14;
     let priceMultiplier = 1.0;
     
     if (hour >= 0 && hour < 8) {
-      priceMultiplier = 0.7 + Math.random() * 0.2;
+      priceMultiplier = 0.7 + rand1 * 0.2;
     } else if (hour >= 8 && hour < 14) {
-      priceMultiplier = 1.2 + Math.random() * 0.3;
+      priceMultiplier = 1.2 + rand1 * 0.3;
     } else if (hour >= 14 && hour < 18) {
-      priceMultiplier = 1.0 + Math.random() * 0.2;
+      priceMultiplier = 1.0 + rand1 * 0.2;
     } else if (hour >= 18 && hour < 22) {
-      priceMultiplier = 1.3 + Math.random() * 0.4;
+      priceMultiplier = 1.3 + rand1 * 0.4;
     } else {
-      priceMultiplier = 0.6 + Math.random() * 0.2;
+      priceMultiplier = 0.6 + rand1 * 0.2;
     }
     
-    const variation = (Math.random() - 0.5) * 0.04;
+    const variation = (rand2 - 0.5) * 0.04;
     const price = Math.max(0.05, Math.min(0.30, (basePrice + variation) * priceMultiplier));
     
     prices.push({
@@ -114,8 +126,10 @@ const fetchFromREEApi = async (date: Date): Promise<HourlyPrice[]> => {
       });
     
     return prices;
-  } catch {
-    return generateRealisticPrices(date);
+  } catch (error) {
+    console.log('API Error, usando datos determinísticos:', error);
+    useFallback = true;
+    return generateDeterministicPrices(date);
   }
 };
 
@@ -129,6 +143,7 @@ export const fetchTodayPrices = async (): Promise<DailyPrices> => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
+  useFallback = false;
   const prices = await fetchFromREEApi(today);
   const sortedPrices = prices.sort((a, b) => a.hour - b.hour);
   const stats = calculateStats(sortedPrices);
@@ -142,6 +157,7 @@ export const fetchTodayPrices = async (): Promise<DailyPrices> => {
   };
   
   lastFetchTime = now;
+  lastApiSuccess = !useFallback;
   
   return cachedPrices;
 };
@@ -183,12 +199,17 @@ export const fetchPricesForRange = async (
 export const refreshApiData = async (): Promise<boolean> => {
   cachedPrices = null;
   lastFetchTime = 0;
+  useFallback = false;
   try {
     await fetchTodayPrices();
     return true;
   } catch {
     return false;
   }
+};
+
+export const isUsingRealData = (): boolean => {
+  return lastApiSuccess;
 };
 
 export const getCurrentHour = (): number => {
