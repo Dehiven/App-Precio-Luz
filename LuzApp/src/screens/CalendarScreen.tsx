@@ -18,12 +18,13 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DAY_SIZE = Math.floor((SCREEN_WIDTH - 64) / 7);
 
 export const CalendarScreen: React.FC = () => {
-  const { selectedDate, setSelectedDate, hourlyPrices } = useApp();
+  const { selectedDate, setSelectedDate } = useApp();
   const [monthPrices, setMonthPrices] = useState<Map<string, DailyPrices>>(new Map());
   const [selectedDayPrices, setSelectedDayPrices] = useState<DailyPrices | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [loadingMonth, setLoadingMonth] = useState(false);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -35,12 +36,40 @@ export const CalendarScreen: React.FC = () => {
   }, [isInitialized, setSelectedDate]);
 
   const loadMonthData = useCallback(async () => {
+    setLoadingMonth(true);
     const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
     const end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-    const data = await fetchPricesForRange(start, end);
     const priceMap = new Map<string, DailyPrices>();
-    data.forEach(d => priceMap.set(d.date, d));
-    setMonthPrices(priceMap);
+    
+    const today = new Date();
+    const isCurrentMonth = 
+      currentMonth.getMonth() === today.getMonth() && 
+      currentMonth.getFullYear() === today.getFullYear();
+    
+    const daysInMonth = end.getDate();
+    const promises: Promise<void>[] = [];
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      
+      if (isCurrentMonth && day > today.getDate()) {
+        continue;
+      }
+      
+      if (checkDate > today) {
+        continue;
+      }
+      
+      promises.push(
+        fetchPricesByDate(checkDate).then(data => {
+          priceMap.set(data.date, data);
+        }).catch(() => {})
+      );
+    }
+    
+    await Promise.all(promises);
+    setMonthPrices(new Map(priceMap));
+    setLoadingMonth(false);
   }, [currentMonth]);
 
   useEffect(() => {
@@ -48,8 +77,12 @@ export const CalendarScreen: React.FC = () => {
   }, [loadMonthData]);
 
   const loadSelectedDayPrices = async () => {
-    const data = await fetchPricesByDate(selectedDate);
-    setSelectedDayPrices(data);
+    try {
+      const data = await fetchPricesByDate(selectedDate);
+      setSelectedDayPrices(data);
+    } catch {
+      setSelectedDayPrices(null);
+    }
   };
 
   useEffect(() => {
@@ -175,7 +208,7 @@ export const CalendarScreen: React.FC = () => {
                 ]}
               >
                 <Text style={[styles.hourTime, isNow && styles.hourTimeActive]}>
-                  {price.hour.toString().padStart(2, '0')}
+                  {price.hour.toString().padStart(2, '0')}:00
                 </Text>
                 <Text style={[
                   styles.hourPrice,
@@ -212,7 +245,10 @@ export const CalendarScreen: React.FC = () => {
             <TouchableOpacity onPress={handlePrevMonth} style={styles.navBtn}>
               <Ionicons name="chevron-back" size={24} color="#fff" />
             </TouchableOpacity>
-            <Text style={styles.monthText}>{formatMonthYear(currentMonth)}</Text>
+            <View style={styles.monthTitleContainer}>
+              <Text style={styles.monthText}>{formatMonthYear(currentMonth)}</Text>
+              {loadingMonth && <Ionicons name="reload" size={16} color="#3498db" style={styles.loadingIcon} />}
+            </View>
             <TouchableOpacity onPress={handleNextMonth} style={styles.navBtn}>
               <Ionicons name="chevron-forward" size={24} color="#fff" />
             </TouchableOpacity>
@@ -291,7 +327,7 @@ export const CalendarScreen: React.FC = () => {
                 <Ionicons name="sunny" size={24} color="#f1c40f" />
                 <Text style={styles.summaryLabel}>Más económico</Text>
                 <Text style={styles.summaryValue}>
-                  {getOptimalHour()?.hour} - {getOptimalHour()?.price.toFixed(3)}€
+                  {getOptimalHour()?.hour}:00 - {getOptimalHour()?.price.toFixed(3)}€
                 </Text>
               </View>
               <View style={styles.summaryDivider} />
@@ -299,7 +335,7 @@ export const CalendarScreen: React.FC = () => {
                 <Ionicons name="flame" size={24} color="#e74c3c" />
                 <Text style={styles.summaryLabel}>Más caro</Text>
                 <Text style={styles.summaryValue}>
-                  {getWorstHour()?.hour} - {getWorstHour()?.price.toFixed(3)}€
+                  {getWorstHour()?.hour}:00 - {getWorstHour()?.price.toFixed(3)}€
                 </Text>
               </View>
             </View>
@@ -369,6 +405,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  monthTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  loadingIcon: {
+    opacity: 0.7,
   },
   weekDaysRow: {
     flexDirection: 'row',
