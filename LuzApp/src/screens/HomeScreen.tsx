@@ -120,7 +120,7 @@ export const HomeScreen: React.FC = () => {
                     <Text style={styles.summaryHeaderText}>Hora más barata</Text>
                   </View>
                   <Text style={styles.summaryHour}>
-                    {cheapestHour.hour.toString().padStart(2, '0')}
+                    {cheapestHour.hour.toString().padStart(2, '0')}:00
                   </Text>
                   <Text style={styles.summaryPrice}>
                     {cheapestHour.price.toFixed(3)} €/kWh
@@ -133,7 +133,7 @@ export const HomeScreen: React.FC = () => {
                     <Text style={styles.summaryHeaderText}>Hora más cara</Text>
                   </View>
                   <Text style={styles.summaryHour}>
-                    {expensiveHour.hour.toString().padStart(2, '0')}
+                    {expensiveHour.hour.toString().padStart(2, '0')}:00
                   </Text>
                   <Text style={styles.summaryPrice}>
                     {expensiveHour.price.toFixed(3)} €/kWh
@@ -148,7 +148,7 @@ export const HomeScreen: React.FC = () => {
                     {nextCheapestHours.map((p, i) => (
                       <View key={p.hour} style={styles.nextHourBadge}>
                         <Text style={styles.nextHourText}>
-                          {p.hour.toString().padStart(2, '0')}
+                          {p.hour.toString().padStart(2, '0')}:00
                         </Text>
                         <Text style={styles.nextPriceText}>
                           {p.price.toFixed(3)}€

@@ -1,7 +1,7 @@
 import { HourlyPrice, DailyPrices, Appliance } from '../types';
 
 const REE_API_URL = 'https://api.esios.ree.es';
-const REE_API_TOKEN = '53bdkj56df7fg98dfg7s8dfg7sdfgs5df6gs5df6g';
+const REE_API_TOKEN = '454b7c51532f99c87cd532ed28e16abb6feaf0e16d2ca270c2e9b1044eb40ed2';
 
 let cachedPrices: DailyPrices | null = null;
 let lastFetchTime: number = 0;
@@ -68,6 +68,8 @@ interface REEApiResponse {
     values: Array<{
       datetime: string;
       value: number;
+      geo_id: number;
+      geo_name: string;
     }>;
   };
 }
@@ -76,12 +78,11 @@ const fetchFromREEApi = async (date: Date): Promise<HourlyPrice[] | null> => {
   try {
     const dateStr = date.toISOString().split('T')[0];
     const response = await fetch(
-      `${REE_API_URL}/indicators/1001/values?start_date=${dateStr}&end_date=${dateStr}`,
+      `${REE_API_URL}/indicators/1001?start_date=${dateStr}T00:00:00&end_date=${dateStr}T23:59:59`,
       {
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Token token="${REE_API_TOKEN}"`
+          'x-api-key': REE_API_TOKEN
         }
       }
     );
@@ -94,11 +95,30 @@ const fetchFromREEApi = async (date: Date): Promise<HourlyPrice[] | null> => {
     const data: REEApiResponse = await response.json();
     
     if (data.indicator?.values) {
-      return data.indicator.values.map((v, index) => ({
-        hour: index,
-        price: Math.round((v.value / 1000) * 1000) / 1000,
-        date: dateStr,
-      }));
+      const peninsulaPrices = data.indicator.values.filter((v: any) => v.geo_id === 8741);
+      const pricesMap = new Map<number, number>();
+      
+      peninsulaPrices.forEach((v: any) => {
+        const datetime = new Date(v.datetime);
+        const hour = datetime.getHours();
+        if (!pricesMap.has(hour)) {
+          pricesMap.set(hour, v.value / 1000);
+        }
+      });
+      
+      const prices: HourlyPrice[] = [];
+      for (let hour = 0; hour < 24; hour++) {
+        const price = pricesMap.get(hour);
+        if (price !== undefined) {
+          prices.push({
+            hour,
+            price: Math.round(price * 1000) / 1000,
+            date: dateStr,
+          });
+        }
+      }
+      
+      return prices.length > 0 ? prices : null;
     }
     
     return null;

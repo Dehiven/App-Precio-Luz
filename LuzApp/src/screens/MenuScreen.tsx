@@ -163,6 +163,9 @@ export const MenuScreen: React.FC = () => {
           <Text style={styles.footerSubtext}>
             Datos: Red Eléctrica Española
           </Text>
+          <Text style={styles.developerText}>
+            Desarrollado por Dehiven Code
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -266,5 +269,11 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 12,
     marginTop: 4,
+  },
+  developerText: {
+    color: '#3498db',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 12,
   },
 });

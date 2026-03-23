@@ -1,6 +1,7 @@
 import { HourlyPrice, DailyPrices, Appliance } from '../types';
 
 const REE_API_URL = 'https://api.esios.ree.es';
+const REE_API_TOKEN = '454b7c51532f99c87cd532ed28e16abb6feaf0e16d2ca270c2e9b1044eb40ed2';
 
 let cachedPrices: DailyPrices | null = null;
 let lastFetchTime: number = 0;
@@ -92,6 +93,7 @@ const fetchFromREEApi = async (date: Date): Promise<HourlyPrice[]> => {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'x-api-key': REE_API_TOKEN
         }
       }
     );

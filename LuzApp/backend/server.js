@@ -6,7 +6,7 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const REE_API_URL = 'https://api.esios.ree.es';
-const REE_API_TOKEN = process.env.REE_API_TOKEN || '53bdkj56df7fg98dfg7s8dfg7sdfgs5df6gs5df6g';
+const REE_API_TOKEN = process.env.REE_API_TOKEN || '454b7c51532f99c87cd532ed28e16abb6feaf0e16d2ca270c2e9b1044eb40ed2';
 
 app.use(cors());
 app.use(express.json());
@@ -21,7 +21,7 @@ const fetchFromREE = async (endpoint) => {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Token token="${REE_API_TOKEN}"`
+        'x-api-key': REE_API_TOKEN
       }
     });
     
@@ -87,20 +87,25 @@ app.get('/prices/today', async (req, res) => {
       return res.json(cachedPrices);
     }
     
-    const data = await fetchFromREE('/indicators/1001/values?start_date=' + 
-      new Date().toISOString().split('T')[0] + '&end_date=' + 
-      new Date().toISOString().split('T')[0]);
+    const today = new Date().toISOString().split('T')[0];
+    const startDate = `${today}T00:00:00`;
+    const endDate = `${today}T23:59:59`;
+    
+    const data = await fetchFromREE(`/indicators/1001?start_date=${startDate}&end_date=${endDate}`);
     
     let todayPrices;
     
     if (data && data.indicator && data.indicator.values) {
-      todayPrices = data.indicator.values.map((v, index) => ({
-        hour: index,
-        date: new Date().toISOString().split('T')[0],
-        price: Math.round((v.value / 1000) * 1000) / 1000,
-        datetime: v.datetime,
-        value_mwh: v.value
-      }));
+      const peninsulaValues = data.indicator.values.filter(v => v.geo_id === 8741);
+      todayPrices = peninsulaValues
+        .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
+        .map((v) => ({
+          hour: new Date(v.datetime).getHours(),
+          date: today,
+          price: Math.round((v.value / 1000) * 1000) / 1000,
+          datetime: v.datetime,
+          value_mwh: v.value
+        }));
     } else {
       console.log('Using mock data - REE API unavailable');
       todayPrices = generateMockPrices();
@@ -109,7 +114,7 @@ app.get('/prices/today', async (req, res) => {
     const stats = calculateStats(todayPrices);
     
     const response = {
-      date: new Date().toISOString().split('T')[0],
+      date: today,
       prices: todayPrices,
       ...stats,
       fetched_at: new Date().toISOString()
@@ -134,18 +139,24 @@ app.get('/prices/today', async (req, res) => {
 app.get('/prices', async (req, res) => {
   try {
     const date = req.query.date || new Date().toISOString().split('T')[0];
-    const data = await fetchFromREE(`/indicators/1001/values?start_date=${date}&end_date=${date}`);
+    const startDate = `${date}T00:00:00`;
+    const endDate = `${date}T23:59:59`;
+    
+    const data = await fetchFromREE(`/indicators/1001?start_date=${startDate}&end_date=${endDate}`);
     
     let prices;
     
     if (data && data.indicator && data.indicator.values) {
-      prices = data.indicator.values.map((v, index) => ({
-        hour: index,
-        date: date,
-        price: Math.round((v.value / 1000) * 1000) / 1000,
-        datetime: v.datetime,
-        value_mwh: v.value
-      }));
+      const peninsulaValues = data.indicator.values.filter(v => v.geo_id === 8741);
+      prices = peninsulaValues
+        .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
+        .map((v) => ({
+          hour: new Date(v.datetime).getHours(),
+          date: date,
+          price: Math.round((v.value / 1000) * 1000) / 1000,
+          datetime: v.datetime,
+          value_mwh: v.value
+        }));
     } else {
       prices = generateMockPrices().map(p => ({...p, date}));
     }
@@ -171,9 +182,11 @@ app.get('/refresh', async (req, res) => {
   cacheTimestamp = null;
   
   try {
-    const data = await fetchFromREE('/indicators/1001/values?start_date=' + 
-      new Date().toISOString().split('T')[0] + '&end_date=' + 
-      new Date().toISOString().split('T')[0]);
+    const today = new Date().toISOString().split('T')[0];
+    const startDate = `${today}T00:00:00`;
+    const endDate = `${today}T23:59:59`;
+    
+    const data = await fetchFromREE(`/indicators/1001?start_date=${startDate}&end_date=${endDate}`);
     
     if (data) {
       res.json({ success: true, message: 'Cache refreshed from REE API' });

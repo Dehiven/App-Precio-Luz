@@ -31,7 +31,7 @@ export const HourlyPriceList: React.FC<HourlyPriceListProps> = ({ prices, showOp
   };
 
   const formatHour = (hour: number) => {
-    return `${hour.toString().padStart(2, '0')}`;
+    return `${hour.toString().padStart(2, '0')}:00`;
   };
 
   const renderItem = ({ item }: { item: HourlyPrice }) => {

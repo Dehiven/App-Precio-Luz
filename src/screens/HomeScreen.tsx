@@ -89,7 +89,7 @@ export const HomeScreen: React.FC = () => {
                       hourlyPrices.reduce((min, p) =>
                         p.price < min.price ? p : min
                       ).hour}
-                    {' - '}
+                    :00 -{' '}
                     {hourlyPrices.length > 0 &&
                       hourlyPrices.reduce((min, p) =>
                         p.price < min.price ? p : min
@@ -107,7 +107,7 @@ export const HomeScreen: React.FC = () => {
                       hourlyPrices.reduce((max, p) =>
                         p.price > max.price ? p : max
                       ).hour}
-                    {' - '}
+                    :00 -{' '}
                     {hourlyPrices.length > 0 &&
                       hourlyPrices.reduce((max, p) =>
                         p.price > max.price ? p : max
