@@ -10,7 +10,6 @@ import {
   HomeScreen,
   GraphScreen,
   AppliancesScreen,
-  CalendarScreen,
   MenuScreen,
   OptimalScheduleScreen,
   SavingsTipsScreen,
@@ -33,9 +32,6 @@ const getTabBarIcon = (routeName: string, focused: boolean, color: string) => {
       break;
     case 'Appliances':
       iconName = focused ? 'flash' : 'flash-outline';
-      break;
-    case 'Calendar':
-      iconName = focused ? 'calendar' : 'calendar-outline';
       break;
     case 'Tips':
       iconName = focused ? 'bulb' : 'bulb-outline';
@@ -87,11 +83,6 @@ export default function App() {
                 name="Appliances"
                 component={AppliancesScreen}
                 options={{ tabBarLabel: 'Aparatos' }}
-              />
-              <Tab.Screen
-                name="Calendar"
-                component={CalendarScreen}
-                options={{ tabBarLabel: 'Calendario' }}
               />
               <Tab.Screen
                 name="Tips"

@@ -99,15 +99,9 @@ export const PriceChart: React.FC<PriceChartProps> = ({
       </View>
       
       <View style={styles.xAxis}>
-        {[
-          { hour: 0, label: '00' },
-          { hour: 6, label: '06' },
-          { hour: 12, label: '12' },
-          { hour: 18, label: '18' },
-          { hour: 23, label: '23' },
-        ].map(item => (
-          <Text key={item.hour} style={styles.xAxisLabel}>
-            {item.label}
+        {Array.from({ length: 24 }, (_, i) => (
+          <Text key={i} style={styles.xAxisLabel}>
+            {i.toString().padStart(2, '0')}
           </Text>
         ))}
       </View>
@@ -173,8 +167,8 @@ const styles = StyleSheet.create({
   barsContainer: {
     position: 'absolute',
     bottom: 30,
-    left: 16,
-    right: 16,
+    left: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
@@ -182,19 +176,23 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   bar: {
-    width: 10,
-    borderRadius: 5,
-    minHeight: 8,
+    flex: 1,
+    marginHorizontal: 1,
+    borderRadius: 2,
+    minHeight: 4,
+    maxWidth: 8,
   },
   xAxis: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   xAxisLabel: {
     color: '#666',
-    fontSize: 10,
+    fontSize: 8,
+    width: 28,
+    textAlign: 'center',
   },
   legend: {
     flexDirection: 'row',
